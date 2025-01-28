@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Chat</title>
+        <style>
+            #messages { list-style-type: none; padding: 0; }
+            .message { margin: 10px 0; }
+            .stream-response { color: #333; }
+        </style>
+    </head>
+    <body>
+        <h1>WebSocket Chat</h1>
+        <h2>Your ID: <span id="ws-id"></span></h2>
+        <form action="" onsubmit="sendMessage(event)">
+            <input type="text" id="messageText" autocomplete="off"/>
+            <button>Send</button>
+        </form>
+        <ul id='messages'>
+        </ul>
+        <script>
+            var client_id = Date.now()
+            document.querySelector("#ws-id").textContent = client_id;
+            var ws = new WebSocket(`ws://localhost:8000/ws/${client_id}`);
+            var currentResponse = null;
+
+            ws.onmessage = function(event) {
+                var messages = document.getElementById('messages')
+
+                if (!currentResponse) {
+                    currentResponse = document.createElement('li')
+                    currentResponse.className = 'message stream-response'
+                    currentResponse.textContent = "Assistant: "
+                    messages.appendChild(currentResponse)
+                }
+
+                if (event.data === '.') {
+                    currentResponse = null
+                } else {
+                    currentResponse.textContent += event.data
+                }
+            };
+
+            function sendMessage(event) {
+                var input = document.getElementById("messageText")
+                ws.send(input.value)
+
+                // Add user message to chat
+                var messages = document.getElementById('messages')
+                var message = document.createElement('li')
+                message.className = 'message'
+                message.textContent = "You: " + input.value
+                messages.appendChild(message)
+
+                currentResponse = null;  // Reset for new response
+                input.value = ''
+                event.preventDefault()
+            }
+        </script>
+    </body>
+</html>
